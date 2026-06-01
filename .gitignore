@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+client/dist/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+server/.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Webpack cache
+client/.cache/
+
+# User-uploaded product images (multer timestamp filenames)
+server/uploads/products/[0-9]*.*
+
+# Temporary files
+*.tmp
+*.temp
