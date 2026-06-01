@@ -1,27 +1,20 @@
 import { Chip, Grid, Paper, Stack, Typography } from '@mui/material';
-import { useAppSelector } from '../hooks/redux';
 import { useT } from '../utils/i18n';
 
 export function HomeInfoSections() {
   const t = useT();
-  const language = useAppSelector((state) => state.settings.language);
-  const benefits = language === 'en'
-    ? [
-      ['Fresh every day', 'We select products with good shelf life and keep chilled items at the right temperature.'],
-      ['Convenient delivery', 'Order for the nearest slot or choose the exact date and delivery time yourself.'],
-      ['Everything at hand', 'Save favorite products, repeat regular purchases and track every order in your profile.'],
-    ]
-    : [
-      ['Свежие продукты каждый день', 'Мы выбираем товары с хорошими сроками годности и соблюдаем температурный режим для молочных и мясных продуктов.'],
-      ['Доставка когда удобно', 'Оформите заказ на ближайший интервал или выберите точную дату и время доставки сами.'],
-      ['Все покупки под рукой', 'Сохраняйте любимые товары, повторяйте привычные покупки и отслеживайте каждый заказ в профиле.'],
-    ];
-  const steps = language === 'en'
-    ? ['Choose groceries from the catalog', 'Add items to the cart and confirm the address', 'Receive fresh products at the selected time']
-    : ['Выберите продукты в каталоге', 'Добавьте товары в корзину и укажите адрес', 'Получите свежие продукты в выбранное время'];
-  const stats = language === 'en'
-    ? [['60 min', 'average fast delivery slot'], ['7 days', 'we deliver every week'], ['100+', 'fresh products in the catalog']]
-    : [['60 мин', 'быстрый интервал доставки'], ['7 дней', 'доставляем всю неделю'], ['100+', 'свежих товаров в каталоге']];
+
+  const benefits = [
+    [t.benefit1Title, t.benefit1Text],
+    [t.benefit2Title, t.benefit2Text],
+    [t.benefit3Title, t.benefit3Text],
+  ];
+  const steps = [t.step1, t.step2, t.step3];
+  const stats = [
+    [t.stat1Value, t.stat1Label],
+    [t.stat2Value, t.stat2Label],
+    [t.stat3Value, t.stat3Label],
+  ];
 
   return (
     <>

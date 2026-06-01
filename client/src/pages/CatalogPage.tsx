@@ -1,76 +1,24 @@
 import {
-  BarChart,
-  Delete,
-  Edit,
-  Inventory,
-  LocalShipping,
-  Logout,
-  SettingsBackupRestore,
-} from '@mui/icons-material';
-import {
   Alert,
-  Box,
-  Button,
-  CardMedia,
-  Checkbox,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  FormControl,
-  FormHelperText,
-  FormControlLabel,
   Grid,
-  IconButton,
-  InputLabel,
-  MenuItem,
   Pagination,
-  Paper,
-  Select,
   Snackbar,
   Stack,
-  Tab,
-  Tabs,
-  TextField,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { CatalogFilters } from '../components/CatalogFilters';
-import { HomeHero } from '../components/HomeHero';
-import { HomeInfoSections } from '../components/HomeInfoSections';
 import { ProductCard } from '../components/ProductCard';
-import { ProductImageUploader } from '../components/ProductImageUploader';
-import { ReportDownloadCard } from '../components/ReportDownloadCard';
-import { SettingsControls } from '../components/SettingsControls';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { authApi, categoryApi, favoriteApi, orderApi, productApi, reportApi, userApi } from '../services';
-import { authActions, cartActions, catalogActions, settingsActions } from '../store';
-import { Category, Order, Product, User } from '../types';
-import { formatDeliverySlot, getDefaultDeliveryTimes, toDateInputValue } from '../utils/delivery';
+import { categoryApi, productApi } from '../services';
+import { catalogActions } from '../store';
+import { Category } from '../types';
 import { useT } from '../utils/i18n';
-import {
-  defaultProductImage,
-  getCategoryName,
-  getFallbackProductDescriptionEn,
-  getFallbackProductNameEn,
-  getProductDescription,
-  getProductName,
-  price,
-} from '../utils/productPresentation';
-import { clearAppStorage } from '../utils/storage';
-import {
-  safeTextRegex,
-  validateAddress,
-  validateAuth,
-  validateProductForm,
-  validateUserForm,
-  ValidationErrors,
-} from '../utils/validation';
+import { safeTextRegex } from '../utils/validation';
+
+type FilterErrorKey = 'priceFormat' | 'searchInvalid' | 'priceRange' | null;
 
 export function CatalogPage() {
   const dispatch = useAppDispatch();
@@ -82,9 +30,23 @@ export function CatalogPage() {
   const isSm = useMediaQuery(theme.breakpoints.up('sm'));
   const t = useT();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [message, setMessage] = useState('');
-  const [filterError, setFilterError] = useState('');
+  const [messageKey, setMessageKey] = useState<'categories' | 'catalog' | null>(null);
+  const [filterErrorKey, setFilterErrorKey] = useState<FilterErrorKey>(null);
   const [page, setPage] = useState(1);
+
+  const message = messageKey === 'categories'
+    ? t.categoriesLoadError
+    : messageKey === 'catalog'
+      ? t.catalogLoadError
+      : '';
+
+  const filterError = filterErrorKey === 'priceFormat'
+    ? t.filterErrorPriceFormat
+    : filterErrorKey === 'searchInvalid'
+      ? t.filterErrorSearchInvalid
+      : filterErrorKey === 'priceRange'
+        ? t.filterErrorPriceRange
+        : '';
 
   const pageSize = useMemo(() => {
     const columnsPerRow = isXl ? 4 : isMd ? 3 : isSm ? 2 : 1;
@@ -109,29 +71,29 @@ export function CatalogPage() {
   }, [page, pageCount]);
 
   useEffect(() => {
-    categoryApi.getAll().then(setCategories).catch(() => setMessage('Не удалось загрузить категории'));
+    categoryApi.getAll().then(setCategories).catch(() => setMessageKey('categories'));
   }, []);
 
   useEffect(() => {
     productApi.getAll(filters)
       .then((data) => dispatch(catalogActions.setProducts(data)))
-      .catch(() => setMessage('Не удалось загрузить каталог'));
+      .catch(() => setMessageKey('catalog'));
   }, [dispatch, filters]);
 
   const updateFilter = (name: string, value: string) => {
     if (['minPrice', 'maxPrice'].includes(name) && value && !/^\d{0,6}([.,]\d{0,2})?$/.test(value)) {
-      setFilterError('Цена должна быть положительным числом, максимум 2 знака после запятой');
+      setFilterErrorKey('priceFormat');
       return;
     }
     if (name === 'search' && value && !safeTextRegex.test(value)) {
-      setFilterError('Поиск содержит недопустимые символы');
+      setFilterErrorKey('searchInvalid');
       return;
     }
     const nextFilters = { ...filters, [name]: value.replace(',', '.') };
     if (nextFilters.minPrice && nextFilters.maxPrice && Number(nextFilters.minPrice) > Number(nextFilters.maxPrice)) {
-      setFilterError('Минимальная цена не может быть больше максимальной');
+      setFilterErrorKey('priceRange');
     } else {
-      setFilterError('');
+      setFilterErrorKey(null);
     }
     dispatch(catalogActions.setFilters({ [name]: nextFilters[name as keyof typeof nextFilters] }));
   };
@@ -143,6 +105,8 @@ export function CatalogPage() {
         categories={categories}
         filters={filters}
         filterError={filterError}
+        searchFieldError={filterErrorKey === 'searchInvalid'}
+        priceFieldsError={filterErrorKey === 'priceFormat' || filterErrorKey === 'priceRange'}
         language={language}
         onChange={updateFilter}
       />
@@ -166,7 +130,7 @@ export function CatalogPage() {
           />
         </Stack>
       )}
-      <Snackbar open={Boolean(message)} autoHideDuration={3000} onClose={() => setMessage('')}>
+      <Snackbar open={Boolean(message)} autoHideDuration={3000} onClose={() => setMessageKey(null)}>
         <Alert severity="error">{message}</Alert>
       </Snackbar>
     </Stack>

@@ -1,18 +1,6 @@
+import { Delete, Edit, Inventory } from '@mui/icons-material';
 import {
-  BarChart,
-  Delete,
-  Edit,
-  Inventory,
-  LocalShipping,
-  Logout,
-  SettingsBackupRestore,
-} from '@mui/icons-material';
-import {
-  Alert,
-  Box,
   Button,
-  CardMedia,
-  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -21,53 +9,32 @@ import {
   Divider,
   FormControl,
   FormHelperText,
-  FormControlLabel,
-  Grid,
   IconButton,
   InputLabel,
   MenuItem,
   Paper,
   Select,
-  Snackbar,
   Stack,
   Tab,
   Tabs,
   TextField,
   Typography,
 } from '@mui/material';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CatalogFilters } from '../../components/CatalogFilters';
-import { HomeHero } from '../../components/HomeHero';
-import { HomeInfoSections } from '../../components/HomeInfoSections';
-import { ProductCard } from '../../components/ProductCard';
+import { useEffect, useState } from 'react';
 import { ProductImageUploader } from '../../components/ProductImageUploader';
-import { ReportDownloadCard } from '../../components/ReportDownloadCard';
-import { SettingsControls } from '../../components/SettingsControls';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { authApi, categoryApi, favoriteApi, orderApi, productApi, reportApi, userApi } from '../../services';
-import { authActions, cartActions, catalogActions, settingsActions } from '../../store';
+import { useAppSelector } from '../../hooks/redux';
+import { categoryApi, orderApi, productApi, userApi } from '../../services';
 import { Category, Order, Product, User } from '../../types';
-import { formatDeliverySlot, getDefaultDeliveryTimes, toDateInputValue } from '../../utils/delivery';
 import { useT } from '../../utils/i18n';
 import {
   defaultProductImage,
   getCategoryName,
   getFallbackProductDescriptionEn,
   getFallbackProductNameEn,
-  getProductDescription,
   getProductName,
   price,
 } from '../../utils/productPresentation';
-import { clearAppStorage } from '../../utils/storage';
-import {
-  safeTextRegex,
-  validateAddress,
-  validateAuth,
-  validateProductForm,
-  validateUserForm,
-  ValidationErrors,
-} from '../../utils/validation';
+import { validateProductForm, validateUserForm, ValidationErrors } from '../../utils/validation';
 
 export function AdminProductsPage() {
   const t = useT();
@@ -145,7 +112,7 @@ export function AdminProductsPage() {
   };
 
   const saveProduct = async () => {
-    const nextErrors = validateProductForm(form);
+    const nextErrors = validateProductForm(form, language);
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       return;
@@ -173,12 +140,12 @@ export function AdminProductsPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setFormErrors({ ...formErrors, imageUrl: 'Выберите файл изображения' });
+      setFormErrors({ ...formErrors, imageUrl: t.imageFileRequired });
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      setFormErrors({ ...formErrors, imageUrl: 'Размер картинки должен быть до 2 МБ' });
+      setFormErrors({ ...formErrors, imageUrl: t.imageSizeError });
       return;
     }
 
@@ -188,7 +155,7 @@ export function AdminProductsPage() {
       setForm((current) => ({ ...current, imageUrl }));
       setFormErrors((current) => ({ ...current, imageUrl: '' }));
     } catch {
-      setFormErrors((current) => ({ ...current, imageUrl: 'Не удалось загрузить картинку на сервер' }));
+      setFormErrors((current) => ({ ...current, imageUrl: t.imageUploadError }));
     } finally {
       setImageUploading(false);
     }
@@ -207,7 +174,7 @@ export function AdminProductsPage() {
   };
 
   const saveUser = async () => {
-    const nextErrors = validateUserForm(userForm);
+    const nextErrors = validateUserForm(userForm, language);
     setUserFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !editingUserId) {
       return;
@@ -227,11 +194,11 @@ export function AdminProductsPage() {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="h3" fontWeight={900}>Админ-панель</Typography>
+      <Typography variant="h3" fontWeight={900}>{t.adminPanel}</Typography>
       <Tabs value={tab} onChange={(_, value) => setTab(value)}>
-        <Tab label="Товары" />
-        <Tab label="Заказы" />
-        <Tab label="Пользователи" />
+        <Tab label={t.tabProducts} />
+        <Tab label={t.tabOrders} />
+        <Tab label={t.tabUsers} />
       </Tabs>
       {tab === 0 && (
         <Paper sx={{ p: 2 }}>
@@ -240,17 +207,17 @@ export function AdminProductsPage() {
             variant="contained"
             onClick={openCreateProductDialog}
           >
-            Добавить товар
+            {t.addProduct}
           </Button>
           <Divider sx={{ my: 2 }} />
           <Stack spacing={1}>
             {products.map((product) => (
               <Stack key={product.id} direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'stretch', md: 'center' }}>
                 <Typography sx={{ flexGrow: 1, overflowWrap: 'anywhere' }}>{getProductName(product, language)}</Typography>
-                <Chip label={getCategoryName(product.Category, language) || 'Без категории'} />
+                <Chip label={getCategoryName(product.Category, language) || t.noCategory} />
                 <Typography>{price(product.price)}</Typography>
-                <Typography>Остаток: {product.stock}</Typography>
-                <IconButton aria-label="Редактировать товар" onClick={() => openEditProductDialog(product)}><Edit /></IconButton>
+                <Typography>{t.stockLabel}: {product.stock}</Typography>
+                <IconButton aria-label={t.ariaEditProduct} onClick={() => openEditProductDialog(product)}><Edit /></IconButton>
                 <IconButton onClick={() => productApi.remove(product.id).then(load)}><Delete /></IconButton>
               </Stack>
             ))}
@@ -262,10 +229,12 @@ export function AdminProductsPage() {
           <Stack spacing={2}>
             {orders.map((order) => (
               <Stack key={order.id} direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-                <Typography sx={{ flexGrow: 1 }}>Заказ #{order.id} · {price(order.total)}</Typography>
+                <Typography sx={{ flexGrow: 1 }}>
+                  {t.orderNumber.replace('{id}', String(order.id))} · {price(order.total)}
+                </Typography>
                 <FormControl sx={{ minWidth: 180 }}>
-                  <InputLabel>Статус</InputLabel>
-                  <Select label="Статус" value={order.status} onChange={(event) => orderApi.updateStatus(order.id, event.target.value).then(load)}>
+                  <InputLabel>{t.statusLabel}</InputLabel>
+                  <Select label={t.statusLabel} value={order.status} onChange={(event) => orderApi.updateStatus(order.id, event.target.value).then(load)}>
                     {['new', 'confirmed', 'packing', 'delivering', 'completed', 'cancelled'].map((status) => (
                       <MenuItem key={status} value={status}>{status}</MenuItem>
                     ))}
@@ -284,7 +253,7 @@ export function AdminProductsPage() {
               <Stack direction="row" spacing={1} alignItems="center">
                 <Chip label={item.role} />
                 {item.role !== 'admin' && (
-                  <IconButton aria-label="Редактировать пользователя" onClick={() => openEditUserDialog(item)}><Edit /></IconButton>
+                  <IconButton aria-label={t.ariaEditUser} onClick={() => openEditUserDialog(item)}><Edit /></IconButton>
                 )}
               </Stack>
             </Stack>
@@ -292,11 +261,11 @@ export function AdminProductsPage() {
         </Paper>
       )}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth>
-        <DialogTitle>{editingProductId ? 'Редактирование товара' : 'Новый товар'}</DialogTitle>
+        <DialogTitle>{editingProductId ? t.editProductTitle : t.newProductTitle}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Название"
+              label={t.productTitleLabel}
               value={form.name}
               onChange={(event) => setForm({ ...form, name: event.target.value })}
               error={Boolean(formErrors.name)}
@@ -307,10 +276,10 @@ export function AdminProductsPage() {
               value={form.nameEn}
               onChange={(event) => setForm({ ...form, nameEn: event.target.value })}
               error={Boolean(formErrors.nameEn)}
-              helperText={formErrors.nameEn || 'Example: Fresh Tomatoes'}
+              helperText={formErrors.nameEn || t.productNameEnExample}
             />
             <TextField
-              label="Описание"
+              label={t.descriptionLabel}
               value={form.description}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
               error={Boolean(formErrors.description)}
@@ -328,7 +297,7 @@ export function AdminProductsPage() {
               minRows={2}
             />
             <TextField
-              label="Цена"
+              label={t.priceLabel}
               value={form.price}
               onChange={(event) => setForm({ ...form, price: event.target.value.replace(',', '.') })}
               error={Boolean(formErrors.price)}
@@ -336,7 +305,7 @@ export function AdminProductsPage() {
               inputProps={{ inputMode: 'decimal' }}
             />
             <TextField
-              label="Остаток"
+              label={t.stockFieldLabel}
               value={form.stock}
               onChange={(event) => setForm({ ...form, stock: event.target.value })}
               error={Boolean(formErrors.stock)}
@@ -344,11 +313,11 @@ export function AdminProductsPage() {
               inputProps={{ inputMode: 'numeric' }}
             />
             <TextField
-              label="Вес"
+              label={t.weightLabel}
               value={form.weight}
               onChange={(event) => setForm({ ...form, weight: event.target.value })}
               error={Boolean(formErrors.weight)}
-              helperText={formErrors.weight || 'Например: 1 кг, 500 г'}
+              helperText={formErrors.weight || t.weightExample}
             />
             <ProductImageUploader
               imageUrl={form.imageUrl}
@@ -359,9 +328,13 @@ export function AdminProductsPage() {
               onReset={() => setForm({ ...form, imageUrl: '' })}
             />
             <FormControl error={Boolean(formErrors.CategoryId)}>
-              <InputLabel>Категория</InputLabel>
-              <Select label="Категория" value={form.CategoryId} onChange={(event) => setForm({ ...form, CategoryId: event.target.value })}>
-                {categories.map((category) => <MenuItem key={category.id} value={String(category.id)}>{category.name}</MenuItem>)}
+              <InputLabel>{t.category}</InputLabel>
+              <Select label={t.category} value={form.CategoryId} onChange={(event) => setForm({ ...form, CategoryId: event.target.value })}>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={String(category.id)}>
+                    {getCategoryName(category, language)}
+                  </MenuItem>
+                ))}
               </Select>
               {formErrors.CategoryId && <FormHelperText>{formErrors.CategoryId}</FormHelperText>}
             </FormControl>
@@ -372,17 +345,17 @@ export function AdminProductsPage() {
             setDialogOpen(false);
             resetProductForm();
           }}>
-            Отмена
+            {t.cancel}
           </Button>
-          <Button variant="contained" onClick={saveProduct}>Сохранить</Button>
+          <Button variant="contained" onClick={saveProduct}>{t.save}</Button>
         </DialogActions>
       </Dialog>
       <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} fullWidth>
-        <DialogTitle>Редактирование пользователя</DialogTitle>
+        <DialogTitle>{t.editUserTitle}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Имя"
+              label={t.nameLabel}
               value={userForm.name}
               onChange={(event) => setUserForm({ ...userForm, name: event.target.value })}
               error={Boolean(userFormErrors.name)}
@@ -397,25 +370,25 @@ export function AdminProductsPage() {
               helperText={userFormErrors.email}
             />
             <TextField
-              label="Телефон"
+              label={t.phoneLabel}
               value={userForm.phone}
               onChange={(event) => setUserForm({ ...userForm, phone: event.target.value })}
               error={Boolean(userFormErrors.phone)}
-              helperText={userFormErrors.phone || 'Например: +375293737994'}
+              helperText={userFormErrors.phone || t.phoneExample}
             />
             <FormControl error={Boolean(userFormErrors.role)}>
-              <InputLabel>Роль</InputLabel>
-              <Select label="Роль" value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
-                <MenuItem value="customer">Покупатель</MenuItem>
-                <MenuItem value="admin">Администратор</MenuItem>
+              <InputLabel>{t.roleLabel}</InputLabel>
+              <Select label={t.roleLabel} value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value })}>
+                <MenuItem value="customer">{t.roleCustomer}</MenuItem>
+                <MenuItem value="admin">{t.roleAdmin}</MenuItem>
               </Select>
               {userFormErrors.role && <FormHelperText>{userFormErrors.role}</FormHelperText>}
             </FormControl>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUserDialogOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={saveUser}>Сохранить</Button>
+          <Button onClick={() => setUserDialogOpen(false)}>{t.cancel}</Button>
+          <Button variant="contained" onClick={saveUser}>{t.save}</Button>
         </DialogActions>
       </Dialog>
     </Stack>

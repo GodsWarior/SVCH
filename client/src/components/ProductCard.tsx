@@ -95,7 +95,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <Typography component={Link} to={`/products/${product.id}`} variant="h6" fontWeight={800} sx={{ overflowWrap: 'anywhere' }}>
               {localizedName}
             </Typography>
-            <IconButton onClick={toggleFavorite} color={isFavorite ? 'secondary' : 'default'} aria-label="Избранное">
+            <IconButton onClick={toggleFavorite} color={isFavorite ? 'secondary' : 'default'} aria-label={t.ariaFavorites}>
               {isFavorite ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
           </Stack>

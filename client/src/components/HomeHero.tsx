@@ -25,7 +25,7 @@ export function HomeHero() {
           <CardMedia
             component="img"
             image="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80"
-            alt="Продукты"
+            alt={t.heroImageAlt}
             sx={{ borderRadius: 6, minHeight: 280, objectFit: 'cover' }}
           />
         </Grid>

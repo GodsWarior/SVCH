@@ -18,11 +18,21 @@ interface CatalogFiltersProps {
   categories: Category[];
   filters: ProductFilters;
   filterError: string;
+  searchFieldError: boolean;
+  priceFieldsError: boolean;
   language: Language;
   onChange: (name: string, value: string) => void;
 }
 
-export function CatalogFilters({ categories, filters, filterError, language, onChange }: CatalogFiltersProps) {
+export function CatalogFilters({
+  categories,
+  filters,
+  filterError,
+  searchFieldError,
+  priceFieldsError,
+  language,
+  onChange,
+}: CatalogFiltersProps) {
   const t = useT();
 
   return (
@@ -34,7 +44,7 @@ export function CatalogFilters({ categories, filters, filterError, language, onC
             label={t.search}
             value={filters.search}
             onChange={(event) => onChange('search', event.target.value)}
-            error={Boolean(filterError && filterError.includes('Поиск'))}
+            error={searchFieldError}
             InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
           />
         </Grid>
@@ -53,7 +63,7 @@ export function CatalogFilters({ categories, filters, filterError, language, onC
             label={t.priceFrom}
             value={filters.minPrice}
             onChange={(event) => onChange('minPrice', event.target.value)}
-            error={Boolean(filterError && !filterError.includes('Поиск'))}
+            error={priceFieldsError}
             inputProps={{ inputMode: 'decimal' }}
           />
         </Grid>
@@ -63,7 +73,7 @@ export function CatalogFilters({ categories, filters, filterError, language, onC
             label={t.priceTo}
             value={filters.maxPrice}
             onChange={(event) => onChange('maxPrice', event.target.value)}
-            error={Boolean(filterError && !filterError.includes('Поиск'))}
+            error={priceFieldsError}
             inputProps={{ inputMode: 'decimal' }}
           />
         </Grid>

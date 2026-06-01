@@ -1,3 +1,6 @@
+import type { Language } from './i18n';
+import { translations } from './i18n';
+
 const padTime = (value: number) => String(value).padStart(2, '0');
 
 export const toDateInputValue = (date: Date) => (
@@ -25,9 +28,11 @@ const addOneHourTime = (date: string, time: string) => {
   return toTimeInputValue(end);
 };
 
-export const formatDeliverySlot = (date: string, startTime: string) => {
+export const formatDeliverySlot = (date: string, startTime: string, language: Language = 'ru') => {
   const endTime = addOneHourTime(date, startTime);
   const today = toDateInputValue(new Date());
-  const dateLabel = date === today ? 'Сегодня' : new Date(`${date}T00:00:00`).toLocaleDateString('ru-RU');
+  const dateLabel = date === today
+    ? translations[language].today
+    : new Date(`${date}T00:00:00`).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU');
   return `${dateLabel} ${startTime}-${endTime}`;
 };

@@ -32,7 +32,7 @@ export function ProductImageUploader({ imageUrl, alt, error, uploading, onChange
         />
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Button variant="outlined" component="label" disabled={uploading}>
-            {uploading ? 'Загрузка...' : t.chooseImage}
+            {uploading ? t.loading : t.chooseImage}
             <input
               hidden
               accept="image/*"
@@ -41,7 +41,7 @@ export function ProductImageUploader({ imageUrl, alt, error, uploading, onChange
             />
           </Button>
           <Button variant="text" onClick={onReset}>
-            По умолчанию
+            {t.useDefault}
           </Button>
         </Stack>
         <FormHelperText error={Boolean(error)}>

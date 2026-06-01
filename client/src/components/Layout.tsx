@@ -130,7 +130,7 @@ export function Layout({ children }: LayoutProps) {
                 {t.english}
               </MenuItem>
             </Menu>
-            <IconButton component={Link} to="/cart" aria-label="Корзина">
+            <IconButton component={Link} to="/cart" aria-label={t.ariaCart}>
               <Badge badgeContent={cartCount} color="secondary">
                 <AddShoppingCart />
               </Badge>
