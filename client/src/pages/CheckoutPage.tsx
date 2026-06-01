@@ -15,8 +15,9 @@ import {
 import { FormEvent, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { orderApi } from '../services';
+import { orderApi, productApi } from '../services';
 import { cartActions } from '../store';
+import { Product } from '../types';
 import { formatDeliverySlot, getDefaultDeliveryTimes, toDateInputValue } from '../utils/delivery';
 import { useT } from '../utils/i18n';
 import { validateAddress, ValidationErrors } from '../utils/validation';
@@ -55,19 +56,52 @@ export function CheckoutPage() {
       return;
     }
 
-    await orderApi.create({
-      address: {
-        city: form.city.trim(),
-        street: form.street.trim(),
-        house: form.house.trim(),
-        flat: form.flat.trim(),
-      },
-      deliverySlot,
-      paymentMethod: form.paymentMethod,
-      items: items.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
-    });
-    dispatch(cartActions.clearCart());
-    navigate('/profile');
+    try {
+      const products: Product[] = await productApi.getAll({ search: '', categoryId: '', minPrice: '', maxPrice: '', sort: 'name' });
+      const productMap = new Map(products.map((product) => [product.id, product]));
+
+      const syncedItems = items
+        .map((item) => {
+          const fresh = productMap.get(item.product.id);
+          if (!fresh || fresh.stock <= 0) return null;
+          const quantity = Math.min(item.quantity, fresh.stock);
+          if (quantity <= 0) return null;
+          return { productId: fresh.id, quantity };
+        })
+        .filter((item): item is { productId: number; quantity: number } => item !== null);
+
+      if (syncedItems.length === 0 || syncedItems.length !== items.length) {
+        dispatch(cartActions.syncCartStock(products));
+        setSubmitError(t.orderStockError);
+        return;
+      }
+
+      const hasIssues = items.some((item) => {
+        const fresh = productMap.get(item.product.id);
+        return !fresh || fresh.stock <= 0 || item.quantity > fresh.stock;
+      });
+      if (hasIssues) {
+        dispatch(cartActions.syncCartStock(products));
+        setSubmitError(t.orderStockError);
+        return;
+      }
+
+      await orderApi.create({
+        address: {
+          city: form.city.trim(),
+          street: form.street.trim(),
+          house: form.house.trim(),
+          flat: form.flat.trim(),
+        },
+        deliverySlot,
+        paymentMethod: form.paymentMethod,
+        items: syncedItems,
+      });
+      dispatch(cartActions.clearCart());
+      navigate('/profile');
+    } catch {
+      setSubmitError(t.orderStockError);
+    }
   };
 
   return (

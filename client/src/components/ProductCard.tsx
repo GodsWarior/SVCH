@@ -28,6 +28,7 @@ import { cartActions, catalogActions } from '../store';
 import { saveJson } from '../utils/storage';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { Product } from '../types';
+import { canAddToCart, getCartQuantity } from '../utils/cartStock';
 
 interface ProductCardProps {
   product: Product;
@@ -36,11 +37,14 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const dispatch = useAppDispatch();
   const favorites = useAppSelector((state) => state.catalog.favorites);
+  const cartItems = useAppSelector((state) => state.cart.items);
   const user = useAppSelector((state) => state.auth.user);
   const language = useAppSelector((state) => state.settings.language);
   const t = useT();
   const [message, setMessage] = useState('');
   const isFavorite = favorites.includes(product.id);
+  const cartQuantity = getCartQuantity(cartItems, product.id);
+  const canAdd = canAddToCart(product, cartQuantity);
   const localizedName = getProductName(product, language);
   const localizedCategory = getCategoryName(product.Category, language);
   const localizedWeight = language === 'en' ? weightFallbackEn(product.weight) : product.weight;
@@ -67,6 +71,14 @@ export function ProductCard({ product }: ProductCardProps) {
     } catch {
       setMessage(t.favoriteError);
     }
+  };
+
+  const handleAddToCart = () => {
+    if (!canAdd) {
+      setMessage(product.stock <= 0 ? t.outOfStock : t.stockLimitReached);
+      return;
+    }
+    dispatch(cartActions.addToCart(product));
   };
 
   return (
@@ -104,8 +116,8 @@ export function ProductCard({ product }: ProductCardProps) {
           <Chip size="small" label={product.stock > 0 ? `${t.inStock}: ${product.stock}` : t.outOfStock} color={product.stock > 0 ? 'success' : 'default'} />
         </CardContent>
         <CardActions>
-          <Button fullWidth variant="contained" onClick={() => dispatch(cartActions.addToCart(product))}>
-            {t.addToCart}
+          <Button fullWidth variant="contained" disabled={product.stock <= 0} onClick={handleAddToCart}>
+            {product.stock <= 0 ? t.outOfStock : t.addToCart}
           </Button>
         </CardActions>
       </Card>

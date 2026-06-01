@@ -9,18 +9,44 @@ export const cartSlice = createSlice({
   },
   reducers: {
     addToCart: (state, action: PayloadAction<Product>) => {
-      const existing = state.items.find((item) => item.product.id === action.payload.id);
+      const product = action.payload;
+      if (product.stock <= 0) return;
+
+      const existing = state.items.find((item) => item.product.id === product.id);
       if (existing) {
+        if (existing.quantity >= product.stock) return;
         existing.quantity += 1;
+        existing.product = product;
       } else {
-        state.items.push({ product: action.payload, quantity: 1 });
+        state.items.push({ product, quantity: 1 });
       }
       saveJson('fresh_cart', state.items);
     },
     changeQuantity: (state, action: PayloadAction<{ productId: number; quantity: number }>) => {
       state.items = state.items
-        .map((item) => item.product.id === action.payload.productId ? { ...item, quantity: action.payload.quantity } : item)
-        .filter((item) => item.quantity > 0);
+        .map((item) => {
+          if (item.product.id !== action.payload.productId) return item;
+          if (action.payload.quantity <= 0) return null;
+          return {
+            ...item,
+            quantity: Math.min(action.payload.quantity, item.product.stock),
+          };
+        })
+        .filter((item): item is CartItem => item !== null);
+      saveJson('fresh_cart', state.items);
+    },
+    syncCartStock: (state, action: PayloadAction<Product[]>) => {
+      const stockMap = new Map(action.payload.map((product) => [product.id, product]));
+      state.items = state.items
+        .map((item) => {
+          const fresh = stockMap.get(item.product.id);
+          if (!fresh || fresh.stock <= 0) return null;
+          return {
+            product: fresh,
+            quantity: Math.min(item.quantity, fresh.stock),
+          };
+        })
+        .filter((item): item is CartItem => item !== null);
       saveJson('fresh_cart', state.items);
     },
     clearCart: (state) => {

@@ -23,6 +23,28 @@ const createOrder = async (req, res, next) => {
 
     const products = await Product.findAll({ where: { id: items.map((item) => item.productId) }, transaction });
     const productMap = new Map(products.map((product) => [product.id, product]));
+
+    for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        await transaction.rollback();
+        return res.status(404).json({ message: 'Product not found' });
+      }
+      if (item.quantity <= 0) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Invalid item quantity' });
+      }
+      if (product.stock < item.quantity) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: 'Insufficient stock',
+          productId: product.id,
+          productName: product.name,
+          available: product.stock,
+        });
+      }
+    }
+
     const total = items.reduce((sum, item) => {
       const product = productMap.get(item.productId);
       return sum + Number(product.price) * item.quantity;
