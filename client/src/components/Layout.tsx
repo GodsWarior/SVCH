@@ -1,4 +1,4 @@
-import { AddShoppingCart, Logout } from '@mui/icons-material';
+import { AddShoppingCart, DarkMode, LightMode, Logout, Translate } from '@mui/icons-material';
 import {
   AppBar,
   Badge,
@@ -10,15 +10,18 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Menu,
+  MenuItem,
   Stack,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { favoriteApi } from '../services';
 import { useT } from '../utils/i18n';
-import { authActions, catalogActions } from '../store';
+import { authActions, catalogActions, settingsActions } from '../store';
 import { loadJson, saveJson } from '../utils/storage';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { Product } from '../types';
@@ -31,9 +34,12 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const cartCount = useAppSelector((state) => state.cart.items.reduce((sum, item) => sum + item.quantity, 0));
   const user = useAppSelector((state) => state.auth.user);
+  const themeMode = useAppSelector((state) => state.settings.themeMode);
+  const language = useAppSelector((state) => state.settings.language);
   const t = useT();
   const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [languageAnchor, setLanguageAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     if (!user) {
@@ -81,26 +87,70 @@ export function Layout({ children }: LayoutProps) {
               <Button key={href} component={Link} to={href}>{label}</Button>
             ))}
           </Stack>
-          <IconButton component={Link} to="/cart" aria-label="Корзина">
-            <Badge badgeContent={cartCount} color="secondary">
-              <AddShoppingCart />
-            </Badge>
-          </IconButton>
-          {user ? (
-            <Button
-              startIcon={<Logout />}
-              onClick={() => {
-                dispatch(authActions.logout());
-                dispatch(catalogActions.clearFavoritesLocal());
-              }}
-              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+          <Stack direction="row" alignItems="center" gap={0.5} sx={{ ml: { xs: 'auto', md: 0 } }}>
+            <Tooltip title={themeMode === 'light' ? t.darkTheme : t.lightTheme}>
+              <IconButton
+                aria-label={t.themeTitle}
+                onClick={() => dispatch(settingsActions.setThemeMode(themeMode === 'light' ? 'dark' : 'light'))}
+              >
+                {themeMode === 'light' ? <DarkMode /> : <LightMode />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t.languageTitle}>
+              <IconButton
+                aria-label={t.languageTitle}
+                onClick={(event) => setLanguageAnchor(event.currentTarget)}
+              >
+                <Translate />
+              </IconButton>
+            </Tooltip>
+            <Menu
+              anchorEl={languageAnchor}
+              open={Boolean(languageAnchor)}
+              onClose={() => setLanguageAnchor(null)}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              {t.logout}
-            </Button>
-          ) : (
-            <Button component={Link} to="/login" variant="contained">{t.login}</Button>
-          )}
-          <Button onClick={() => setDrawerOpen(true)} sx={{ display: { md: 'none' } }}>{t.menu}</Button>
+              <MenuItem
+                selected={language === 'ru'}
+                onClick={() => {
+                  dispatch(settingsActions.setLanguage('ru'));
+                  setLanguageAnchor(null);
+                }}
+              >
+                {t.russian}
+              </MenuItem>
+              <MenuItem
+                selected={language === 'en'}
+                onClick={() => {
+                  dispatch(settingsActions.setLanguage('en'));
+                  setLanguageAnchor(null);
+                }}
+              >
+                {t.english}
+              </MenuItem>
+            </Menu>
+            <IconButton component={Link} to="/cart" aria-label="Корзина">
+              <Badge badgeContent={cartCount} color="secondary">
+                <AddShoppingCart />
+              </Badge>
+            </IconButton>
+            {user ? (
+              <Button
+                startIcon={<Logout />}
+                onClick={() => {
+                  dispatch(authActions.logout());
+                  dispatch(catalogActions.clearFavoritesLocal());
+                }}
+                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+              >
+                {t.logout}
+              </Button>
+            ) : (
+              <Button component={Link} to="/login" variant="contained">{t.login}</Button>
+            )}
+            <Button onClick={() => setDrawerOpen(true)} sx={{ display: { md: 'none' } }}>{t.menu}</Button>
+          </Stack>
         </Toolbar>
       </AppBar>
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
