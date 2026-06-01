@@ -1,0 +1,10 @@
+<svg width="640" height="480" viewBox="0 0 640 480" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="480" rx="40" fill="#F1F8E9"/>
+  <circle cx="320" cy="230" r="116" fill="#66BB6A"/>
+  <path d="M320 132C352 94 397 91 426 112C399 134 362 147 320 132Z" fill="#2E7D32"/>
+  <path d="M316 130C315 103 326 80 349 64" stroke="#5D4037" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="282" cy="212" r="16" fill="#E8F5E9"/>
+  <circle cx="358" cy="212" r="16" fill="#E8F5E9"/>
+  <path d="M282 276C306 298 336 298 360 276" stroke="#E8F5E9" stroke-width="14" stroke-linecap="round"/>
+  <text x="320" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#2E7D32">FreshMarket</text>
+</svg>
