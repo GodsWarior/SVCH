@@ -4,7 +4,7 @@ Fullstack coursework project — online grocery delivery platform.
 
 Repository: [https://github.com/GodsWarior/SVCH](https://github.com/GodsWarior/SVCH)
 
-Link to the explanatory note: [Google Docs](https://docs.google.com/document/d/1ulNFrm-Pc0NImMtXRauU5AXUzVdTFjJX/edit?usp=drive_link&ouid=115557660193418079859&rtpof=true&sd=true)
+Link to the explanatory note: [Google Docs](https://docs.google.com/document/d/1tJ05PsLDWpG5mH23euK5MMmXgGVCeKex/edit?usp=sharing&ouid=115557660193418079859&rtpof=true&sd=true)
 
 ## Stack
 
